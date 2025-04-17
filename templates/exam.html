@@ -1,0 +1,1432 @@
+{#<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Proctoring System</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #2d3748;
+        }
+        
+        .exam-container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        @media (min-width: 768px) {
+            .exam-container {
+                padding: 3rem;
+            }
+        }
+        
+        h2 {
+            color: #4a5568;
+            font-size: 2.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        h2::after {
+            content: "";
+            display: block;
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(to right, #667eea, #764ba2);
+            margin: 0.5rem auto;
+            border-radius: 2px;
+        }
+        
+        p {
+            color: #4a5568;
+            font-size: 1.125rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
+        }
+        
+        button {
+            background: linear-gradient(to right, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 50px;
+            font-size: 1.125rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            margin-bottom: 2rem;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        .exam-content {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 15px;
+            border: 1px solid #e2e8f0;
+            margin-top: 2rem;
+            display: none;
+            animation: fadeIn 0.6s ease forwards;
+            position: relative;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .proctoring-overlay {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 240px;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            display: none; /* Hidden initially */
+        }
+        
+        .proctoring-overlay h3 {
+            font-size: 1rem;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        
+        .proctoring-overlay img {
+            width: 100%;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        #aiResult {
+            font-size: 0.875rem;
+            padding: 6px;
+            margin-top: 8px;
+            text-align: center;
+        }
+        
+        .quiz-column {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        h3 {
+            color: #4a5568;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .quiz-questions {
+            text-align: left;
+            margin-bottom: 2rem;
+        }
+        
+        .question {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .question:last-child {
+            border-bottom: none;
+        }
+        
+        .question p {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            max-width: 100%;
+            text-align: left;
+        }
+        
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .option input {
+            accent-color: #667eea;
+        }
+        
+        .quiz-result {
+            font-weight: bold;
+            font-size: 1.125rem;
+            margin-top: 1rem;
+            text-align: center;
+        }
+        
+        .loader {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(102, 126, 234, 0.3);
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+            margin: 20px auto;
+            display: block;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .modal {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            animation: modalFadeIn 0.3s ease forwards;
+        }
+        
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .modal h3 {
+            margin-bottom: 1.5rem;
+            color: #4a5568;
+            text-align: center;
+        }
+        
+        .modal-content {
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #4a5568;
+        }
+        
+        .modal-actions {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+        
+        .modal-actions button {
+            margin-bottom: 0;
+        }
+
+        #chat-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 320px;
+            background: #f1f1f1;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            font-family: Arial, sans-serif;
+            z-index: 9999;
+          }
+        
+          #chat-window {
+            height: 260px;
+            overflow-y: auto;
+            padding: 10px;
+            background: #ffffff;
+            border-bottom: 1px solid #ccc;
+          }
+        
+          #chat-input-area {
+            display: flex;
+          }
+        
+          #user-input {
+            flex: 1;
+            border: none;
+            padding: 10px;
+            border-radius: 0;
+            outline: none;
+          }
+        
+          #send-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+          }
+        
+          .message {
+            margin-bottom: 10px;
+          }
+        
+          .message.user {
+            text-align: right;
+            color: #333;
+          }
+        
+          .message.bot {
+            text-align: left;
+            color: #007bff;
+          }
+    </style>
+</head>
+<body>
+    <div class="exam-container">
+        <h2>Welcome Student 👋</h2>
+        <p>Get ready to start your exam. Make sure your camera and microphone are on.</p>
+        
+        
+        <!-- Move the proctoring overlay here, outside of the exam content -->
+        <div id="proctorOverlay" class="proctoring-overlay">
+            <h3>Proctoring 🎥</h3>
+            <img id="webcam" src="{{ url_for('video_feed') }}" height="160">
+            <p id="aiResult"></p>
+        </div>
+        
+        <button id="startExamBtn">Start Exam</button>
+        
+        <div id="examContent" class="exam-content">
+            <!-- Main quiz content (takes most of the space) -->
+            <div class="quiz-column">
+                <h3>Exam Questions 📝</h3>
+                <div id="quizQuestions" class="quiz-questions">
+                    <div class="loader"></div>
+                    <p>Loading quiz questions...</p>
+                </div>
+                
+                <button id="submitQuizBtn" style="display: none;">Submit Quiz</button>
+                <div id="quizResult" class="quiz-result" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Terms and Conditions Modal -->
+    <div id="termsModal" class="modal-overlay">
+        <div class="modal">
+            <h3>Exam Terms and Conditions</h3>
+            <div class="modal-content">
+                <p>Please read and accept the following terms and conditions before proceeding with the exam:</p>
+                <ol style="margin-left: 1.5rem; margin-top: 1rem; margin-bottom: 1rem;">
+                    <li>This is a proctored exam. Your webcam and microphone must remain on throughout the exam.</li>
+                    <li>No external resources, books, notes, or additional devices are permitted during the exam.</li>
+                    <li>Switching tabs or minimizing the browser window is not allowed and will be flagged as cheating.</li>
+                    <li>You must remain visible in the webcam view at all times.</li>
+                    <li>No communication with others is allowed during the exam.</li>
+                    <li>Failure to comply with these rules may result in disqualification.</li>
+                    <li>Your exam session will be monitored and recorded for security purposes.</li>
+                    <li>Time limits must be strictly observed. The exam will automatically submit when time expires.</li>
+                </ol>
+                <p>By clicking "I Agree", you acknowledge that you have read, understood, and agree to abide by these terms and conditions.</p>
+            </div>
+            <div class="modal-actions">
+                <button id="declineTermsBtn" style="background: #e53e3e;">Decline</button>
+                <button id="acceptTermsBtn">I Agree</button>
+            </div>
+        </div>
+    </div>
+    <div id="chat-container">
+        <div id="chat-window"></div>
+        <div id="chat-input-area">
+          <input type="text" id="user-input" placeholder="Ask Erica anything..." />
+          <button id="send-button">Send</button>
+        </div>
+      </div>
+      
+
+    <script>
+        // DOM elements
+        const startExamBtn = document.getElementById('startExamBtn');
+        const examContent = document.getElementById('examContent');
+        const proctorOverlay = document.getElementById('proctorOverlay');
+        const quizQuestionsContainer = document.getElementById('quizQuestions');
+        const submitQuizBtn = document.getElementById('submitQuizBtn');
+        const quizResult = document.getElementById('quizResult');
+        const termsModal = document.getElementById('termsModal');
+        const acceptTermsBtn = document.getElementById('acceptTermsBtn');
+        const declineTermsBtn = document.getElementById('declineTermsBtn');
+        
+        // Store questions and answers
+        let quizQuestions = [];
+        
+        // Functions
+        function showTermsModal() {
+            termsModal.style.display = "flex";
+        }
+        
+        function hideTermsModal() {
+            termsModal.style.display = "none";
+        }
+        
+        function startExam() {
+            examContent.style.display = "block";
+            proctorOverlay.style.display = "block"; // Show proctoring overlay
+            startExamBtn.style.display = "none";
+
+            loadQuizQuestions();  // Show quiz when exam starts
+    
+            // Call cheating detection every 3 seconds
+            setInterval(() => {
+                fetch('/detect')
+                    .then(response => response.json())
+                    .then(data => {
+                        const resultElement = document.getElementById("aiResult");
+                        if (data.cheating_detected) {
+                            resultElement.textContent = "⚠️ Cheating Detected: " + data.reason;
+                            resultElement.style.color = "red";
+                        } else {
+                            resultElement.textContent = "✅ No cheating detected";
+                            resultElement.style.color = "green";
+                        }
+                    })
+                    .catch(err => {
+                        console.error("Detection failed", err);
+                    });
+            }, 3000);
+        }
+        
+        function loadQuizQuestions() {
+            fetch('/quiz_questions')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch quiz questions');
+                    }
+                    return response.json();
+                })
+                .then(questions => {
+                    quizQuestions = questions;
+                    displayQuizQuestions(questions);
+                })
+                .catch(error => {
+                    console.error('Error loading questions:', error);
+                    quizQuestionsContainer.innerHTML = `
+                        <p style="color: red;">Failed to load quiz questions. Please try again.</p>
+                        <button onclick="loadQuizQuestions()">Retry</button>
+                    `;
+                });
+        }
+        
+        function displayQuizQuestions(questions) {
+            quizQuestionsContainer.innerHTML = '';
+            
+            if (!questions || questions.length === 0) {
+                quizQuestionsContainer.innerHTML = '<p>No questions available.</p>';
+                return;
+            }
+            
+            questions.forEach(question => {
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'question';
+                
+                // Display the question text with HTML entities decoded
+                const questionText = document.createElement('p');
+                questionText.innerHTML = decodeHtmlEntities(question.question);
+                questionDiv.appendChild(questionText);
+                
+                const optionsDiv = document.createElement('div');
+                optionsDiv.className = 'options';
+                
+                question.options.forEach(option => {
+                    const optionLabel = document.createElement('label');
+                    optionLabel.className = 'option';
+                    
+                    const optionInput = document.createElement('input');
+                    optionInput.type = 'radio';
+                    optionInput.name = `q${question.id}`;
+                    optionInput.value = option;
+                    
+                    const optionText = document.createElement('span');
+                    optionText.innerHTML = decodeHtmlEntities(option);
+                    
+                    optionLabel.appendChild(optionInput);
+                    optionLabel.appendChild(optionText);
+                    optionsDiv.appendChild(optionLabel);
+                });
+                
+                questionDiv.appendChild(optionsDiv);
+                quizQuestionsContainer.appendChild(questionDiv);
+            });
+            
+            submitQuizBtn.style.display = "block";
+        }
+        
+        function decodeHtmlEntities(text) {
+            const textArea = document.createElement('textarea');
+            textArea.innerHTML = text;
+            return textArea.value;
+        }
+        
+        function submitQuiz() {
+            const answers = {};
+            const radios = document.querySelectorAll('input[type="radio"]:checked');
+            
+            radios.forEach(radio => {
+                const qid = radio.name.replace('q', '');
+                answers[qid] = radio.value;
+            });
+
+            fetch('/submit_quiz', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ answers: answers })
+            })
+            .then(response => response.json())
+            .then(data => {
+                quizResult.textContent = `✅ You scored ${data.score}/${data.total}`;
+                quizResult.style.display = "block";
+                submitQuizBtn.style.display = "none";
+                
+                // Disable all radio buttons
+                const radioInputs = document.querySelectorAll('input[type="radio"]');
+                radioInputs.forEach(input => {
+                    input.disabled = true;
+                });
+            })
+            .catch(error => {
+                console.error('Error submitting quiz:', error);
+                quizResult.textContent = "⚠️ Failed to submit quiz. Please try again.";
+                quizResult.style.display = "block";
+                quizResult.style.color = "red";
+            });
+        }
+        
+        // Event listeners
+        startExamBtn.addEventListener('click', function() {
+            showTermsModal();
+        });
+        
+        acceptTermsBtn.addEventListener('click', function() {
+            hideTermsModal();
+            startExam();
+        });
+        
+        declineTermsBtn.addEventListener('click', function() {
+            hideTermsModal();
+            // Optional: Show a message that they need to accept terms to proceed
+            alert("You must accept the terms and conditions to start the exam.");
+        });
+        
+        submitQuizBtn.addEventListener('click', submitQuiz);
+
+        // Tab switching detection
+        let focusLostCount = 0;
+
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) {
+                // User switched tab or minimized
+                focusLostCount++;
+                alert("⚠️ Tab switching or minimizing is not allowed during the exam!");
+
+                // Optional: Notify backend about cheating
+                fetch('/log_cheating', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ reason: 'Tab switched or window minimized' })
+                });
+            }
+        });
+
+        class EricaChatbot {
+            constructor() {
+              this.name = "Erica";
+              this.greeting = "Hello! I'm Erica, your AI exam proctoring assistant. How can I help you today?";
+              this.knowledgeBase = {
+                examPrep: {
+                  systemRequirements: "To use our proctoring system, you'll need a computer with a webcam, microphone, and stable internet connection.",
+                  browserSupport: "Supported browsers: Chrome, Firefox, Edge, and Safari. Keep them updated.",
+                  preExamChecklist: "Checklist: 1) Webcam/mic working, 2) Apps closed, 3) Quiet space, 4) ID ready, 5) Stable internet."
+                },
+                authentication: {
+                  login: "Log in using your email and password. Forgot password? Use the recovery option.",
+                  accountIssues: "Account trouble? Check your email for verification or contact support@aiexamproctoring.com.",
+                  idVerification: "You’ll need a government-issued photo ID for verification before the exam."
+                },
+                duringExam: {
+                  allowedItems: "Only permitted items (e.g., blank paper, calculator) allowed during exam.",
+                  behaviorRules: "Stay in camera view. Don’t look away too long or use unauthorized items.",
+                  technicalIssues: "If there's a problem, use the 'Report Issue' button. Support will help quickly."
+                },
+                privacyAndSecurity: {
+                  dataProtection: "All recordings are encrypted and only used to maintain exam integrity.",
+                  recordingConsent: "You must give consent to be recorded for the duration of the exam."
+                }
+              };
+            }
+        
+            greet() {
+              return this.greeting;
+            }
+        
+            processQuery(userInput) {
+              const input = userInput.toLowerCase();
+              if (this.containsAny(input, ["hi", "hello", "hey"])) return this.greet();
+              if (this.containsAny(input, ["system", "requirements", "computer"])) return this.knowledgeBase.examPrep.systemRequirements;
+              if (this.containsAny(input, ["browser", "chrome", "firefox"])) return this.knowledgeBase.examPrep.browserSupport;
+              if (this.containsAny(input, ["prepare", "checklist", "ready"])) return this.knowledgeBase.examPrep.preExamChecklist;
+              if (this.containsAny(input, ["login", "sign in", "password"])) return this.knowledgeBase.authentication.login;
+              if (this.containsAny(input, ["id", "verify", "passport"])) return this.knowledgeBase.authentication.idVerification;
+              if (this.containsAny(input, ["allowed", "bring", "items"])) return this.knowledgeBase.duringExam.allowedItems;
+              if (this.containsAny(input, ["rules", "behavior", "cheating"])) return this.knowledgeBase.duringExam.behaviorRules;
+              if (this.containsAny(input, ["technical", "crash", "problem"])) return this.knowledgeBase.duringExam.technicalIssues;
+              if (this.containsAny(input, ["privacy", "recording", "security"])) return this.knowledgeBase.privacyAndSecurity.dataProtection;
+              return "I'm not sure I understood that. Try asking about system requirements, login, rules, or privacy.";
+            }
+        
+            containsAny(text, keywords) {
+              return keywords.some(keyword => text.includes(keyword));
+            }
+          }
+        
+          const erica = new EricaChatbot();
+        
+          function handleUserInput(message) {
+            if (!message.trim()) return "Please type your question.";
+            return erica.processQuery(message);
+          }
+        
+          function initChatbot() {
+            const chatWindow = document.getElementById('chat-window');
+            const userInput = document.getElementById('user-input');
+            const sendButton = document.getElementById('send-button');
+        
+            // Show Erica's welcome message
+            addMessage('bot', erica.greet());
+        
+            sendButton.addEventListener('click', () => {
+              const message = userInput.value;
+              if (message.trim() !== '') {
+                addMessage('user', message);
+                const response = handleUserInput(message);
+                addMessage('bot', response);
+                userInput.value = '';
+              }
+            });
+        
+            function addMessage(sender, text) {
+              const messageDiv = document.createElement('div');
+              messageDiv.className = `message ${sender}`;
+              messageDiv.textContent = sender === 'bot' ? `Erica: ${text}` : `You: ${text}`;
+              chatWindow.appendChild(messageDiv);
+              chatWindow.scrollTop = chatWindow.scrollHeight;
+            }
+          }
+        
+          document.addEventListener('DOMContentLoaded', initChatbot);
+    </script>
+</body>
+</html> #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Proctoring System</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #2d3748;
+        }
+        
+        .exam-container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        @media (min-width: 768px) {
+            .exam-container {
+                padding: 3rem;
+            }
+        }
+        
+        .header-logo {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        
+        .header-logo img {
+            height: 80px;
+            width: auto;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+            transition: transform 0.3s ease;
+        }
+        
+        .header-logo img:hover {
+            transform: scale(1.05);
+        }
+        
+        h2 {
+            color: #4a5568;
+            font-size: 2.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        h2::after {
+            content: "";
+            display: block;
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(to right, #667eea, #764ba2);
+            margin: 0.5rem auto;
+            border-radius: 2px;
+        }
+        
+        p {
+            color: #4a5568;
+            font-size: 1.125rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
+        }
+        
+        button {
+            background: linear-gradient(to right, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 50px;
+            font-size: 1.125rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            margin-bottom: 2rem;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        .exam-content {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 15px;
+            border: 1px solid #e2e8f0;
+            margin-top: 2rem;
+            display: none;
+            animation: fadeIn 0.6s ease forwards;
+            position: relative;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .proctoring-overlay {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 240px;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            display: none; /* Hidden initially */
+        }
+        
+        .proctoring-overlay h3 {
+            font-size: 1rem;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        
+        .proctoring-overlay img {
+            width: 100%;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        #aiResult {
+            font-size: 0.875rem;
+            padding: 6px;
+            margin-top: 8px;
+            text-align: center;
+        }
+        
+        .quiz-column {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        h3 {
+            color: #4a5568;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .quiz-questions {
+            text-align: left;
+            margin-bottom: 2rem;
+        }
+        
+        .question {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .question:last-child {
+            border-bottom: none;
+        }
+        
+        .question p {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            max-width: 100%;
+            text-align: left;
+        }
+        
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .option input {
+            accent-color: #667eea;
+        }
+        
+        .quiz-result {
+            font-weight: bold;
+            font-size: 1.125rem;
+            margin-top: 1rem;
+            text-align: center;
+        }
+        
+        .loader {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(102, 126, 234, 0.3);
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+            margin: 20px auto;
+            display: block;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .modal {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            animation: modalFadeIn 0.3s ease forwards;
+        }
+        
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .modal h3 {
+            margin-bottom: 1.5rem;
+            color: #4a5568;
+            text-align: center;
+        }
+        
+        .modal-content {
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #4a5568;
+        }
+        
+        .modal-actions {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+        
+        .modal-actions button {
+            margin-bottom: 0;
+        }
+
+        #chat-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 320px;
+            background: #f1f1f1;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            font-family: Arial, sans-serif;
+            z-index: 9999;
+        }
+        
+        #chat-header {
+            background: linear-gradient(to right, #667eea, #764ba2);
+            color: white;
+            padding: 10px;
+            border-radius: 10px 10px 0 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        #chat-header img {
+            height: 30px;
+            width: 30px;
+            margin-right: 10px;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+        
+        #chat-header h4 {
+            margin: 0;
+            font-weight: 600;
+        }
+        
+        #chat-window {
+            height: 260px;
+            overflow-y: auto;
+            padding: 10px;
+            background: #ffffff;
+            border-bottom: 1px solid #ccc;
+        }
+        
+        #chat-input-area {
+            display: flex;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 0 0 10px 10px;
+        }
+        
+        #user-input {
+            flex: 1;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 20px;
+            outline: none;
+        }
+        
+        #send-button {
+            background: linear-gradient(to right, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 20px;
+            margin-left: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        #send-button:hover {
+            opacity: 0.9;
+        }
+        
+        .message {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 18px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        
+        .message.user {
+            background: #e3f2fd;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+            color: #333;
+        }
+        
+        .message.bot {
+            background: #f1f1f1;
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="exam-container">
+       
+        
+        
+        <h2>Welcome Student 👋</h2>
+        <p>Get ready to start your exam. Make sure your camera and microphone are on.</p>
+        
+        <!-- Proctoring Overlay -->
+        <div id="proctorOverlay" class="proctoring-overlay">
+            <h3>Proctoring 🎥</h3>
+            <img id="webcam" src="{{ url_for('video_feed') }}" height="160">
+            <p id="aiResult"></p>
+        </div>
+        
+        <button id="startExamBtn">Start Exam</button>
+        
+        <div id="examContent" class="exam-content">
+            <!-- Main quiz content -->
+            <div class="quiz-column">
+                <h3>Exam Questions 📝</h3>
+                <div id="quizQuestions" class="quiz-questions">
+                    <div class="loader"></div>
+                    <p>Loading quiz questions...</p>
+                </div>
+                
+                <button id="submitQuizBtn" style="display: none;">Submit Quiz</button>
+                <div id="quizResult" class="quiz-result" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Terms and Conditions Modal -->
+    <div id="termsModal" class="modal-overlay">
+        <div class="modal">
+            <h3>Exam Terms and Conditions</h3>
+            <div class="modal-content">
+                <p>Please read and accept the following terms and conditions before proceeding with the exam:</p>
+                <ol style="margin-left: 1.5rem; margin-top: 1rem; margin-bottom: 1rem;">
+                    <li>This is a proctored exam. Your webcam and microphone must remain on throughout the exam.</li>
+                    <li>No external resources, books, notes, or additional devices are permitted during the exam.</li>
+                    <li>Switching tabs or minimizing the browser window is not allowed and will be flagged as cheating.</li>
+                    <li>You must remain visible in the webcam view at all times.</li>
+                    <li>No communication with others is allowed during the exam.</li>
+                    <li>Failure to comply with these rules may result in disqualification.</li>
+                    <li>Your exam session will be monitored and recorded for security purposes.</li>
+                    <li>Time limits must be strictly observed. The exam will automatically submit when time expires.</li>
+                </ol>
+                <p>By clicking "I Agree", you acknowledge that you have read, understood, and agree to abide by these terms and conditions.</p>
+            </div>
+            <div class="modal-actions">
+                <button id="declineTermsBtn" style="background: #e53e3e;">Decline</button>
+                <button id="acceptTermsBtn">I Agree</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Chatbot Container with Logo -->
+    <div id="chat-container">
+        <div id="chat-header">
+            <img src="{{ url_for('static', filename='erica-logo.png') }}" alt="Erica">
+            <h4>Erica Assistant</h4>
+        </div>
+        <div id="chat-window"></div>
+        <div id="chat-input-area">
+            <input type="text" id="user-input" placeholder="Ask Erica anything..." />
+            <button id="send-button">Send</button>
+        </div>
+    </div>
+
+    <script>
+        // DOM elements
+        const startExamBtn = document.getElementById('startExamBtn');
+        const examContent = document.getElementById('examContent');
+        const proctorOverlay = document.getElementById('proctorOverlay');
+        const quizQuestionsContainer = document.getElementById('quizQuestions');
+        const submitQuizBtn = document.getElementById('submitQuizBtn');
+        const quizResult = document.getElementById('quizResult');
+        const termsModal = document.getElementById('termsModal');
+        const acceptTermsBtn = document.getElementById('acceptTermsBtn');
+        const declineTermsBtn = document.getElementById('declineTermsBtn');
+        
+        // Store questions and answers
+        let quizQuestions = [];
+        
+        // Functions
+        function showTermsModal() {
+            termsModal.style.display = "flex";
+        }
+        
+        function hideTermsModal() {
+            termsModal.style.display = "none";
+        }
+        
+        function startExam() {
+            examContent.style.display = "block";
+            proctorOverlay.style.display = "block"; // Show proctoring overlay
+            startExamBtn.style.display = "none";
+
+            loadQuizQuestions();  // Show quiz when exam starts
+    
+            // Call cheating detection every 3 seconds
+            setInterval(() => {
+                fetch('/detect')
+                    .then(response => response.json())
+                    .then(data => {
+                        const resultElement = document.getElementById("aiResult");
+                        if (data.cheating_detected) {
+                            resultElement.textContent = data.reason;
+                            resultElement.style.color = "red";
+                        } else {
+                            resultElement.textContent = "✅ No cheating detected";
+                            resultElement.style.color = "green";
+                        }
+                    })
+                    .catch(err => {
+                        console.error("Detection failed", err);
+                    });
+            }, 3000);
+        }
+        
+        function loadQuizQuestions() {
+            fetch('/quiz_questions')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch quiz questions');
+                    }
+                    return response.json();
+                })
+                .then(questions => {
+                    quizQuestions = questions;
+                    displayQuizQuestions(questions);
+                })
+                .catch(error => {
+                    console.error('Error loading questions:', error);
+                    quizQuestionsContainer.innerHTML = `
+                        <p style="color: red;">Failed to load quiz questions. Please try again.</p>
+                        <button onclick="loadQuizQuestions()">Retry</button>
+                    `;
+                });
+        }
+        
+        function displayQuizQuestions(questions) {
+            quizQuestionsContainer.innerHTML = '';
+            
+            if (!questions || questions.length === 0) {
+                quizQuestionsContainer.innerHTML = '<p>No questions available.</p>';
+                return;
+            }
+            
+            questions.forEach(question => {
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'question';
+                
+                // Display the question text with HTML entities decoded
+                const questionText = document.createElement('p');
+                questionText.innerHTML = decodeHtmlEntities(question.question);
+                questionDiv.appendChild(questionText);
+                
+                const optionsDiv = document.createElement('div');
+                optionsDiv.className = 'options';
+                
+                question.options.forEach(option => {
+                    const optionLabel = document.createElement('label');
+                    optionLabel.className = 'option';
+                    
+                    const optionInput = document.createElement('input');
+                    optionInput.type = 'radio';
+                    optionInput.name = `q${question.id}`;
+                    optionInput.value = option;
+                    
+                    const optionText = document.createElement('span');
+                    optionText.innerHTML = decodeHtmlEntities(option);
+                    
+                    optionLabel.appendChild(optionInput);
+                    optionLabel.appendChild(optionText);
+                    optionsDiv.appendChild(optionLabel);
+                });
+                
+                questionDiv.appendChild(optionsDiv);
+                quizQuestionsContainer.appendChild(questionDiv);
+            });
+            
+            submitQuizBtn.style.display = "block";
+        }
+        
+        function decodeHtmlEntities(text) {
+            const textArea = document.createElement('textarea');
+            textArea.innerHTML = text;
+            return textArea.value;
+        }
+        
+        function submitQuiz() {
+            const answers = {};
+            const radios = document.querySelectorAll('input[type="radio"]:checked');
+            
+            radios.forEach(radio => {
+                const qid = radio.name.replace('q', '');
+                answers[qid] = radio.value;
+            });
+
+            fetch('/submit_quiz', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ answers: answers })
+            })
+            .then(response => response.json())
+            .then(data => {
+                quizResult.textContent = `✅ You scored ${data.score}/${data.total}`;
+                quizResult.style.display = "block";
+                submitQuizBtn.style.display = "none";
+                
+                // Disable all radio buttons
+                const radioInputs = document.querySelectorAll('input[type="radio"]');
+                radioInputs.forEach(input => {
+                    input.disabled = true;
+                });
+            })
+            .catch(error => {
+                console.error('Error submitting quiz:', error);
+                quizResult.textContent = "⚠️ Failed to submit quiz. Please try again.";
+                quizResult.style.display = "block";
+                quizResult.style.color = "red";
+            });
+        }
+        
+        // Event listeners
+        startExamBtn.addEventListener('click', function() {
+            showTermsModal();
+        });
+        
+        acceptTermsBtn.addEventListener('click', function() {
+            hideTermsModal();
+            startExam();
+        });
+        
+        declineTermsBtn.addEventListener('click', function() {
+            hideTermsModal();
+            // Optional: Show a message that they need to accept terms to proceed
+            alert("You must accept the terms and conditions to start the exam.");
+        });
+        
+        submitQuizBtn.addEventListener('click', submitQuiz);
+
+        // Tab switching detection
+        let focusLostCount = 0;
+
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) {
+                // User switched tab or minimized
+                focusLostCount++;
+                alert("⚠️ Tab switching or minimizing is not allowed during the exam!");
+
+                // Optional: Notify backend about cheating
+                fetch('/log_cheating', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ reason: 'Tab switched or window minimized' })
+                });
+            }
+        });
+
+        class EricaChatbot {
+            constructor() {
+              this.name = "Erica";
+              this.greeting = "Hello! I'm Erica, your AI exam proctoring assistant. How can I help you today?";
+              this.knowledgeBase = {
+                examPrep: {
+                  systemRequirements: "To use our proctoring system, you'll need a computer with a webcam, microphone, and stable internet connection.",
+                  browserSupport: "Supported browsers: Chrome, Firefox, Edge, and Safari. Keep them updated.",
+                  preExamChecklist: "Checklist: 1) Webcam/mic working, 2) Apps closed, 3) Quiet space, 4) ID ready, 5) Stable internet."
+                },
+                authentication: {
+                  login: "Log in using your email and password. Forgot password? Use the recovery option.",
+                  accountIssues: "Account trouble? Check your email for verification or contact support@aiexamproctoring.com.",
+                  idVerification: "You'll need a government-issued photo ID for verification before the exam."
+                },
+                duringExam: {
+                  allowedItems: "Only permitted items (e.g., blank paper, calculator) allowed during exam.",
+                  behaviorRules: "Stay in camera view. Don't look away too long or use unauthorized items.",
+                  technicalIssues: "If there's a problem, use the 'Report Issue' button. Support will help quickly."
+                },
+                privacyAndSecurity: {
+                  dataProtection: "All recordings are encrypted and only used to maintain exam integrity.",
+                  recordingConsent: "You must give consent to be recorded for the duration of the exam."
+                }
+              };
+            }
+        
+            greet() {
+              return this.greeting;
+            }
+        
+            processQuery(userInput) {
+              const input = userInput.toLowerCase();
+              if (this.containsAny(input, ["hi", "hello", "hey"])) return this.greet();
+              if (this.containsAny(input, ["system", "requirements", "computer"])) return this.knowledgeBase.examPrep.systemRequirements;
+              if (this.containsAny(input, ["browser", "chrome", "firefox"])) return this.knowledgeBase.examPrep.browserSupport;
+              if (this.containsAny(input, ["prepare", "checklist", "ready"])) return this.knowledgeBase.examPrep.preExamChecklist;
+              if (this.containsAny(input, ["login", "sign in", "password"])) return this.knowledgeBase.authentication.login;
+              if (this.containsAny(input, ["id", "verify", "passport"])) return this.knowledgeBase.authentication.idVerification;
+              if (this.containsAny(input, ["allowed", "bring", "items"])) return this.knowledgeBase.duringExam.allowedItems;
+              if (this.containsAny(input, ["rules", "behavior", "cheating"])) return this.knowledgeBase.duringExam.behaviorRules;
+              if (this.containsAny(input, ["technical", "crash", "problem"])) return this.knowledgeBase.duringExam.technicalIssues;
+              if (this.containsAny(input, ["privacy", "recording", "security"])) return this.knowledgeBase.privacyAndSecurity.dataProtection;
+              return "I'm not sure I understood that. Try asking about system requirements, login, rules, or privacy.";
+            }
+        
+            containsAny(text, keywords) {
+              return keywords.some(keyword => text.includes(keyword));
+            }
+          }
+        
+          const erica = new EricaChatbot();
+        
+          function handleUserInput(message) {
+            if (!message.trim()) return "Please type your question.";
+            return erica.processQuery(message);
+          }
+        
+          function initChatbot() {
+            const chatWindow = document.getElementById('chat-window');
+            const userInput = document.getElementById('user-input');
+            const sendButton = document.getElementById('send-button');
+        
+            // Show Erica's welcome message
+            addMessage('bot', erica.greet());
+        
+            sendButton.addEventListener('click', () => {
+              const message = userInput.value;
+              if (message.trim() !== '') {
+                addMessage('user', message);
+                const response = handleUserInput(message);
+                addMessage('bot', response);
+                userInput.value = '';
+              }
+            });
+        
+            // Allow pressing Enter to send
+            userInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendButton.click();
+                }
+            });
+        
+            function addMessage(sender, text) {
+              const messageDiv = document.createElement('div');
+              messageDiv.className = `message ${sender}`;
+              messageDiv.textContent = text;
+              chatWindow.appendChild(messageDiv);
+              chatWindow.scrollTop = chatWindow.scrollHeight;
+            }
+          }
+        
+          document.addEventListener('DOMContentLoaded', initChatbot);
+    </script>
+</body>
+</html>

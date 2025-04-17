@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Cheating Detection</title>
+</head>
+<body>
+    <h1>AI Cheating Detection System</h1>
+
+    <!-- Video Stream -->
+    <img src="{{ url_for('video_feed') }}" width="640" height="480">
+
+    <button id="startDetection">Start Detection</button>
+    <p id="aiResult"></p>
+
+    <script>
+        document.getElementById("startDetection").addEventListener("click", function () {
+            fetch("/detect")
+            .then(response => response.json())
+            .then(data => {
+                if (data.cheating_detected) {
+                    document.getElementById("aiResult").innerText = "Cheating Detected!";
+                } else {
+                    document.getElementById("aiResult").innerText = "No Cheating Detected.";
+                }
+            });
+        });
+    </script>
+</body>
+</html>
