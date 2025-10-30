@@ -1,5 +1,3 @@
-# HackIndia-Spark-5-2025-Catalyst
-
 # 🧠 NeuroProctor – AI-Based Exam Proctoring System
 
 ## ⚙️ Tech Stack
